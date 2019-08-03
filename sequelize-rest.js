@@ -13,10 +13,10 @@ const Movie = db.define('movie', {
 
 db.sync()
   .then(() => Movie.create({
-      title: 'Inception',
-      yearOfRelease: 2010,
-      synopsis: 'A thief who steals corporate secrets through the use of dream-sharing technology is given the inverse task of planting an idea into the mind of a C.E.O.'}))
-  .then(() => console.log('DataBase was updated'))
+    title: 'Inception',
+    yearOfRelease: 2010,
+    synopsis: 'A thief who steals corporate secrets through the use of dream-sharing technology is given the inverse task of planting an idea into the mind of a C.E.O.'
+  }))
   .catch(console.error)
 
 const app = express()
@@ -34,11 +34,21 @@ app.post('/movie', (request, response, next) => {
 })
 
 app.get('/movie', (request, response, next) => {
-  Movie.findAll()
-    .then(movies => response.send(movies))
+  const limit = request.query.limit || 10
+  const offset = request.query.offset || 0
+
+  Movie.findAndCountAll({
+    offset,
+    limit
+  })
+    .then(result => {
+      response.send({
+        movies: result.rows,
+        total: result.count
+      })
+    })
     .catch(err => next(err))
-  }
-)
+})
 
 app.get('/movie/:id', (request, response, next) => {
   Movie.findByPk(request.params.id)
@@ -55,7 +65,9 @@ app.put('/movie/:id', (request, response, next) => {
 
 app.delete('/movie/:id', (request, response, next) => {
   Movie.destroy({
-    where : { id : request.params.id}
+    where: {
+      id: request.params.id
+    }
   })
     .then(number => response.send({ number }))
     .catch(err => next(err))
